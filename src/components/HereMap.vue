@@ -6,6 +6,16 @@
 </template>
 
 <script>
+const H = window.H;
+
+const routingParameters = {
+  routingMode: "fast",
+  transportMode: "car",
+  origin: "52.5160,13.3779", // Brandenburg Gate
+  destination: "52.5206,13.3862", // Friedrichstraße Railway Station
+  return: "polyline,turnByTurnActions,actions,instructions,travelSummary",
+};
+
 export default {
   name: "HereMap",
   props: {
@@ -14,6 +24,7 @@ export default {
   },
   data() {
     return {
+      map: null,
       platform: null,
       apikey: process.env.VUE_APP_HERE_MAPS_API_KEY
     };
@@ -30,7 +41,6 @@ export default {
     initializeHereMap() { // rendering map
 
       const mapContainer = this.$refs.hereMap;
-      const H = window.H;
       // Obtain the default map types from the platform object
       var maptypes = this.platform.createDefaultLayers();
 
@@ -40,6 +50,7 @@ export default {
         center: this.center
         // center object { lat: 40.730610, lng: -73.935242 }
       });
+      this.map = map;
 
       addEventListener("resize", () => map.getViewPort().resize());
 
@@ -49,8 +60,46 @@ export default {
       // add UI
       H.ui.UI.createDefault(map, maptypes);
       // End rendering the initial map
-    }
-  }
+
+      this.calculateRouteFromAtoB();
+    },
+    calculateRouteFromAtoB() {
+        const router = this.platform.getRoutingService({}, 8);
+        router?.calculateRoute(routingParameters, this.onResult, this.onError);
+      },
+      addRouteShapeToMap(route) {
+        route.sections.forEach((section) => {
+          // decode LineString from the flexible polyline
+          const linestring = H.geo.LineString.fromFlexiblePolyline(
+            section.polyline
+          );
+  
+          // Create a polyline to display the route:
+          const polyline = new H.map.Polyline(linestring, {
+            data: null,
+            style: {
+              lineWidth: 4,
+              strokeColor: "rgba(0, 128, 255, 0.7)",
+            },
+          });
+  
+          // Add the polyline to the map
+          this.map.addObject(polyline);  /* This line causes app assets to stay in pending state and causes app crash */
+          // And zoom to its bounding rectangle
+          this.map.getViewModel().setLookAtData({
+            bounds: polyline.getBoundingBox(),
+          });
+        });
+      },
+      onResult(result) {
+        const route = result.routes[0];
+        // ensure that at least one route was found
+        this.addRouteShapeToMap(route);
+      },
+      onError(error) {
+        console.error(error);
+      },
+  },
 };
 </script>
 
