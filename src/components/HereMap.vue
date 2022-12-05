@@ -7,6 +7,7 @@
 
 <script>
 const H = window.H;
+var map;
 
 const routingParameters = {
   routingMode: "fast",
@@ -24,7 +25,6 @@ export default {
   },
   data() {
     return {
-      map: null,
       platform: null,
       apikey: process.env.VUE_APP_HERE_MAPS_API_KEY
     };
@@ -45,12 +45,11 @@ export default {
       var maptypes = this.platform.createDefaultLayers();
 
       // Instantiate (and display) a map object:
-      var map = new H.Map(mapContainer, maptypes.vector.normal.map, {
+      map = new H.Map(mapContainer, maptypes.vector.normal.map, {
         zoom: 10,
         center: this.center
         // center object { lat: 40.730610, lng: -73.935242 }
       });
-      this.map = map;
 
       addEventListener("resize", () => map.getViewPort().resize());
 
@@ -84,9 +83,9 @@ export default {
           });
   
           // Add the polyline to the map
-          this.map.addObject(polyline);  /* This line causes app assets to stay in pending state and causes app crash */
+          map.addObject(polyline);  /* This line causes app assets to stay in pending state and causes app crash */
           // And zoom to its bounding rectangle
-          this.map.getViewModel().setLookAtData({
+          map.getViewModel().setLookAtData({
             bounds: polyline.getBoundingBox(),
           });
         });
