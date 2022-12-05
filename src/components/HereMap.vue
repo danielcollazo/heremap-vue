@@ -7,7 +7,6 @@
 
 <script>
 const H = window.H;
-var map;
 
 const routingParameters = {
   routingMode: "fast",
@@ -45,7 +44,7 @@ export default {
       var maptypes = this.platform.createDefaultLayers();
 
       // Instantiate (and display) a map object:
-      map = new H.Map(mapContainer, maptypes.vector.normal.map, {
+      var map = new H.Map(mapContainer, maptypes.vector.normal.map, {
         zoom: 10,
         center: this.center
         // center object { lat: 40.730610, lng: -73.935242 }
@@ -60,13 +59,13 @@ export default {
       H.ui.UI.createDefault(map, maptypes);
       // End rendering the initial map
 
-      this.calculateRouteFromAtoB();
+      this.calculateRouteFromAtoB(map);
     },
-    calculateRouteFromAtoB() {
+    calculateRouteFromAtoB(map) {
         const router = this.platform.getRoutingService({}, 8);
-        router?.calculateRoute(routingParameters, this.onResult, this.onError);
+        router?.calculateRoute(routingParameters, (result) => this.onResult(result, map), this.onError);
       },
-      addRouteShapeToMap(route) {
+      addRouteShapeToMap(route, map) {
         route.sections.forEach((section) => {
           // decode LineString from the flexible polyline
           const linestring = H.geo.LineString.fromFlexiblePolyline(
@@ -90,10 +89,10 @@ export default {
           });
         });
       },
-      onResult(result) {
+      onResult(result, map) {
         const route = result.routes[0];
         // ensure that at least one route was found
-        this.addRouteShapeToMap(route);
+        this.addRouteShapeToMap(route, map);
       },
       onError(error) {
         console.error(error);
